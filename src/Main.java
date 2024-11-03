@@ -5,7 +5,13 @@ public class Main {
         Variable y = new Variable("y", 4);
         Variable z = new Variable("z", 7);
         Variable w = new Variable("w", 2);
-        Formula formula = new Sum(x, new Product(y, new Sum(x, y, z, w)));
+        Operator sum = new Sum();
+        Operator product = new Product();
+
+//        Formula formula = new Sum(x, new Product(y, new Sum(x, y, z, w)));
+        // new Sum(x,y) => new VariadicOperator(sum, x, y)
+        // new Product(x,y) => new VariadicOperator(product, x, y)
+        Formula formula = new VariadicOperator(sum,x , new VariadicOperator(product,y ,  new VariadicOperator(sum, x, y, z , w)));
         System.out.println(formula.asString()); // "(x+(y*(x+y+x+y+z+w))"
         System.out.println(formula.asValue()); // "28.5"
         x.set(5);
@@ -50,24 +56,23 @@ class Variable implements Formula {
 }
 
 
-abstract class VariadicOperator implements Formula {
+class VariadicOperator implements Formula {
     private Formula[] formula;
 
-
-    public VariadicOperator(Formula... formula) {
+    Operator operator;
+    public VariadicOperator(Operator operator, Formula... formula) {
+        this.operator = operator;
         this.formula = formula;
     }
 
-    abstract double initialValue();
-    abstract char symbol();
-    abstract double cumulativeValue(double accumulator, double value);
+
 
 
     public double asValue() {
 
-        double sum = this.initialValue();
+        double sum = this.operator.initialValue();
         for (Formula f : formula) {
-            sum = this.cumulativeValue(sum, f.asValue());
+            sum = this.operator.cumulativeValue(sum, f.asValue());
         }
         return sum;
     }
@@ -83,7 +88,7 @@ abstract class VariadicOperator implements Formula {
             }
             else {
                 s.append(" ");
-                s.append(this.symbol());
+                s.append(this.operator.symbol());
                 s.append(" ");
             }
 
@@ -96,22 +101,29 @@ abstract class VariadicOperator implements Formula {
     }
 
 }
-class Sum extends VariadicOperator {
 
 
-    public Sum(Formula... formula) {
-        super(formula);
-    }
+interface Operator {
+     double initialValue();
+     char symbol();
+     double cumulativeValue(double accumulator, double value);
+}
+class Sum implements Operator {
 
-    char symbol(){
+
+//    public Sum(Formula... formula) {
+//        super(formula);
+//    }
+
+    public char symbol(){
         return '+';
     }
 
-    double initialValue() {
+    public double initialValue() {
         return 0;
     }
 
-    double cumulativeValue(double accumulator, double value) {
+    public double cumulativeValue(double accumulator, double value) {
         return accumulator + value;
     }
 
@@ -120,20 +132,20 @@ class Sum extends VariadicOperator {
 
 }
 
-class Product extends VariadicOperator {
-    public Product(Formula... formula) {
-        super(formula);
-    }
+class Product implements Operator  {
+//    public Product(Formula... formula) {
+//        super(formula);
+//    }
 
-    char symbol(){
+    public char symbol(){
         return '*';
     }
 
-    double initialValue() {
+    public double initialValue() {
         return 1;
     }
 
-    double cumulativeValue(double accumulator, double value) {
+    public double cumulativeValue(double accumulator, double value) {
         return accumulator * value;
     }
 
