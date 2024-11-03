@@ -1,23 +1,59 @@
-public class Main {
+import java.util.Stack;
+
+public class Calculator {
+
     public static void main(String[] args) {
 
-        Variable x = new Variable("x", 2.5);
-        Variable y = new Variable("y", 4);
-        Variable z = new Variable("z", 7);
-        Variable w = new Variable("w", 2);
-        Operator sum = new Sum();
-        Operator product = new Product();
-
-//        Formula formula = new Sum(x, new Product(y, new Sum(x, y, z, w)));
-        // new Sum(x,y) => new VariadicOperator(sum, x, y)
-        // new Product(x,y) => new VariadicOperator(product, x, y)
-        Formula formula = new VariadicOperator(sum,x , new VariadicOperator(product,y ,  new VariadicOperator(sum, x, y, z , w)));
-        System.out.println(formula.asString()); // "(x+(y*(x+y+x+y+z+w))"
-        System.out.println(formula.asValue()); // "28.5"
-        x.set(5);
-        System.out.println(formula.asValue()); // "41.0"
+        Calculator calculator = new Calculator();
+        System.out.println(calculator.analyze(args).asValue());
 
     }
+     public Formula analyze(String[] tokens){
+         Stack<Formula> stack = new Stack<>();
+
+
+         for (String token : tokens){
+             this.analyzeToken(token, stack);
+         }
+         return stack.pop();
+
+     }
+     public void analyzeToken(String token , Stack<Formula> stack){
+
+
+         if (token.equals("+")){
+             this.analyzeSum(stack);
+
+         } else if (token.equals("*")){
+             this.analyzeProduct(stack);
+
+         }else {
+             this.analyzeinit(token, stack);
+         }
+
+     }
+
+    public void analyzeSum(Stack<Formula> stack){
+        Formula constant1 = stack.pop();
+        Formula constant2 = stack.pop();
+        stack.push(new Constant(constant1.asValue() + constant2.asValue()));
+
+    }
+    public void analyzeProduct(Stack<Formula> stack){
+        Formula constant1 = stack.pop();
+        Formula constant2 = stack.pop();
+        stack.push(new Constant(constant1.asValue() * constant2.asValue()));
+
+    }
+    public void analyzeinit(String token ,Stack<Formula> stack){
+        try {
+            stack.push(new Constant(Double.parseDouble(token)));
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid Doubl input");
+        }
+
+    }
+
 
 }
 interface Formula {
@@ -28,6 +64,24 @@ interface Formula {
 
 }
 
+
+class Constant implements Formula{
+
+    private double value;
+    @Override
+    public double asValue() {
+        return this.value;
+    }
+
+    public Constant(double value) {
+        this.value = value;
+    }
+
+    @Override
+    public String asString() {
+        return null;
+    }
+}
 class Variable implements Formula {
 
     private double value;
